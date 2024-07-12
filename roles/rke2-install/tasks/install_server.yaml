@@ -1,7 +1,7 @@
 ---
 - name: RKE2 Server | Place configation
   ansible.builtin.template:
-    src: server-config.yaml
+    src: server-config.yaml.j2
     dest: /etc/rancher/rke2/config.yaml
     owner: root
     group: root
