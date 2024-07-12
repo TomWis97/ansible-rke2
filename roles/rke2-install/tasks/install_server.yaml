@@ -7,6 +7,7 @@
     group: root
     mode: "0660"
   become: yes
+  notify: Restart rke2-server
 
 - name: RKE2 Server | Enable and start Systemd service
   ansible.builtin.systemd_service:
@@ -16,3 +17,4 @@
   poll: 5
   async: 600
   become: yes
+  register: rke2_server_status
