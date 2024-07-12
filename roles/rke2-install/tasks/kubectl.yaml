@@ -6,6 +6,7 @@
     mode: '0755'
     owner: root
     group: root
+    follow_redirects: all
   become: yes
 
 - name: Kubectl | Create .kube directory
