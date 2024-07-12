@@ -1,7 +1,7 @@
 ---
 - name: Kubectl | Fetch binary
   ansible.builtin.uri:
-    src: https://dl.k8s.io/release/{{ rke2_version.split('+')[0] }}/bin/linux/{{ rke2_arch }}/kubectl
+    url: https://dl.k8s.io/release/{{ rke2_version.split('+')[0] }}/bin/linux/{{ rke2_arch }}/kubectl
     dest: /usr/local/bin/kubectl
     mode: '0755'
     owner: root
