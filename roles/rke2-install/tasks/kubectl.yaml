@@ -1,0 +1,20 @@
+---
+- name: Kubectl | Fetch binary
+  ansible.builtin.uri:
+    src: https://dl.k8s.io/release/{{ rke2_version.split('+')[0] }}/bin/linux/{{ rke2_arch }}/kubectl
+    dest: /usr/local/bin/kubectl
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Kubectl | Create .kube directory
+  ansible.builtin.file:
+    path: /root/.kube
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Kubectl | Make sure root can find kubectl
+  ansible.builtin.lineinfile:
+    path: /root/.bashrc
+    line: '[[ "$PATH" =~ "/usr/local/bin" ]] || export PATH="/usr/local/bin:$PATH" # Added by rke2 playbook'

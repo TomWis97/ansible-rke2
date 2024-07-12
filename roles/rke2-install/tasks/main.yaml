@@ -9,3 +9,6 @@
   ansible.builtin.include_tasks: install_server.yaml
   when:
     - '"rke2_server" in group_names'
+
+- name: Kubectl
+  ansible.builtin.include_tasks: kubectl.yaml
