@@ -15,7 +15,7 @@
 
 - name: Common | Register latest version
   ansible.builtin.set_fact:
-    rke2_version: "{{ rke2_version['url'].split('/') | last }}"
+    rke2_version: "{{ rke2_version_request['url'].split('/') | last }}"
   when: rke2_version is not defined
 
 #- name: Common | Get checksums
