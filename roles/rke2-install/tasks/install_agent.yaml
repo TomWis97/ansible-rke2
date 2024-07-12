@@ -15,7 +15,7 @@
 
 - name: RKE2 Agent | Save token
   ansible.builtin.copy:
-    content: "{{ server_token.content | base64decode }}"
+    content: "{{ server_token.content | b64decode }}"
     owner: root
     group: root
     mode: "0600"
