@@ -23,3 +23,10 @@
     state: restarted
   become: yes
   when: not rke2_server_status.changed
+
+- name: Restart rke2-agent
+  ansible.builtin.systemd_service:
+    name: rke2-agent
+    state: restarted
+  become: yes
+  when: not rke2_agent_status.changed

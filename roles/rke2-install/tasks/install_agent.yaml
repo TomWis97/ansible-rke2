@@ -1,0 +1,44 @@
+---
+- name: RKE2 Agent | Check for token
+  ansible.builtin.stat:
+    path: /etc/rancher/rke2/agent-token
+  register: token_file
+  become: yes
+
+- name: RKE2 Agent | Fetch token
+  delegate_to: "{{ groups['rke2_server'][0] }}"
+  ansible.builtin.slurp:
+    src: /var/lib/rancher/rke2/server/node-token
+  become: yes
+  when: not token_file.stat.exists
+  register: server_token
+
+- name: RKE2 Agent | Save token
+  ansible.builtin.copy:
+    content: "{{ server_token.content | base64decode }}"
+    owner: root
+    group: root
+    mode: "0600"
+    dest: /etc/rancher/rke2/agent-token
+  become: yes
+  when: not token_file.stat.exists
+
+- name: RKE2 Agent | Place configuration
+  ansible.builtin.template:
+    src: agent-config.yaml.j2
+    dest: /etc/rancher/rke2/config.yaml
+    owner: root
+    group: root
+    mode: "0660"
+  become: yes
+  notify: Restart rke2-agent
+
+- name: RKE2 Agent | Enable and start Systemd service
+  ansible.builtin.systemd_service:
+    name: rke2-agent.service
+    state: started
+    enabled: yes
+  poll: 5
+  async: 600
+  become: yes
+  register: rke2_agent_status

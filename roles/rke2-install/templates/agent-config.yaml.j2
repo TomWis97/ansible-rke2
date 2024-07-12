@@ -1,0 +1,8 @@
+---
+server: https://{{ host_vars[groups[rke2_server][0]]['ansible_host'] }}:9345
+token-file: /etc/rancher/rke2/agent-token
+node-name: {{ inventory_hostname }}
+{% if rke2_node_labels is defined %}
+node_label: {{ rke2_node_labels | to_json }}
+{% endif %}
+selinux: True
