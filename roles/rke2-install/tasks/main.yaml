@@ -8,4 +8,4 @@
 - name: RKE2 Server
   ansible.builtin.include_tasks: install_server.yaml
   when:
-    - '"rke2_server" in group_names
+    - '"rke2_server" in group_names'
