@@ -11,7 +11,7 @@
     name: "{{ item }}"
     enabled: no
     state: stopped
-  when: item in ansible_facts.services
+  when: "'nm-cloud-setup.service' in ansible_facts.services"
   loop:
     - nm-cloud-setup.service
     - nm-cloud-setup.timer
