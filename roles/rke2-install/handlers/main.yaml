@@ -1,0 +1,15 @@
+---
+- name: Reload Systemd
+  ansible.builtin.systemd_service:
+    daemon_reload: yes
+
+- name: Reload NetworkManager
+  ansible.builtin.systemd_service:
+    name: NetworkManager
+    state: reloaded
+
+- name: Reboot if old NetworkManager
+  ansible.builtin.reboot:
+  when:
+    - "'NetworkManager' in ansible_facts.packages"
+    - ansible_facts['packages']['NetworkManager']['version'] is version('1.30.0', '<')

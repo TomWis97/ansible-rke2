@@ -1,0 +1,14 @@
+---
+write-kubeconfig-mode: "0600"
+write-kubeconfig: /root/kubeconfig
+tls-san:
+  - {{ inventory_hostname }}
+  - {{ ansible_host }}
+{% if rke2_node_labels is defined %}
+node_label: {{ rke2_node_labels | to_json }}
+{% endif %}
+cluster-cidr: {{ rke2_cluster_cidr }}
+service-cidr: {{ rke2_service_cidr }}
+cni: cilium
+node-name: {{ inventory_hostname }}
+selinux: True

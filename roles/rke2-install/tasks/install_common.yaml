@@ -1,0 +1,58 @@
+---
+- name: Common | Discover architecture
+  vars:
+    arch_lookup:
+      aarch64: arm64
+      x86_64: amd64
+  ansible.builtin.set_fact:
+    rke2_arch: "{{ arch_lookup[ansible_architecture] }}"
+
+- name: Common | Get latest version
+  ansible.builtin.uri:
+    url: https://update.rke2.io/v1-release/channels/{{ rke2_channel }}
+  register: latest_version_request
+  when: rke2_version is not defined
+
+- name: Common | Register latest version
+  ansible.builtin.set_fact:
+    rke2_version: "{{ rke2_version['url'].split('/') | last }}"
+  when: rke2_version is not defined
+
+#- name: Common | Get checksums
+#  ansible.builtin.uri:
+#    url: https://github.com/rancher/rke2/releases/download/{{ rke2_version }}/sha256sum-{{ rke2_arch }}.txt
+#    return_content: yes
+#  register: rke2_checksums
+
+- name: Common | Create configuration directories
+  ansible.builtin.file:
+    path: /etc/rancher/rke2
+    owner: root
+    group: root
+    mode: "0770"
+    recurse: yes
+    state: directory
+  become: yes
+
+- name: Common | Extract tarball
+  ansible.builtin.unarchive:
+    dest: /usr/local
+    owner: root
+    group: root
+    remote_src: yes
+    src: https://github.com/rancher/rke2/releases/download/{{ rke2_version }}/rke2.{{ ansible_system | lower }}-{{ rke2_arch }}.tar.gz
+  notify: Reload Systemd
+  become: yes
+
+- name: Common | Get SELinux supported package versions
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/rancher/rke2-selinux/releases
+  register: rke2_selinux_releases
+
+- name: Common | Install SELinux supporting package
+  vars:
+      latest_version: "{{ rke2_selinux_releases.json | json_query('[*].tag_name') | select('search', 'stable') | community.general.version_sort | last }}"
+  ansible.builtin.yum:
+    name: "{{ ((rke2_selinux_releases.json | selectattr('tag_name', 'in', latest_version) | first)['assets'] | selectattr('name', 'search', 'el' + (ansible_distribution_major_version|string) + '.noarch.rpm') | first)['browser_download_url'] }}"
+    state: installed
+  become: yes

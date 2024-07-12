@@ -1,0 +1,38 @@
+---
+- name: Pre-install | Get Systemd facts
+  ansible.builtin.service_facts:
+  become: yes
+
+- name: Pre-install | Get Yum facts
+  ansible.builtin.package_facts:
+
+- name: Pre-install | Disable nm-cloud-setup units
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: no
+    state: stopped
+  when: item in ansible_facts.services
+  loop:
+    - nm-cloud-setup.service
+    - nm-cloud-setup.timer
+  become: yes
+
+- name: Pre-install | Place NetworkManager config
+  ansible.builtin.copy:
+    content: |
+      [keyfile]
+      unmanaged-devices=interface-name:cali*;interface-name:flannel*
+    dest: /etc/NetworkManager/conf.d/rke2-canal.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Reload NetworkManager
+    - Reboot if old NetworkManager
+  become: yes
+
+- name: Pre-install | Install iptables
+  ansible.builtin.yum:
+    name: iptables
+    state: installed
+  become: yes

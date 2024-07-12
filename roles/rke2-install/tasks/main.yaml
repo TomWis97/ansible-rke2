@@ -1,0 +1,11 @@
+---
+- name: Pre-installation tasks
+  ansible.builtin.include_tasks: pre-install.yaml
+
+- name: Common installation steps
+  ansible.builtin.include_tasks: install_common.yaml
+
+- name: RKE2 Server
+  ansible.builtin.include_tasks: install_server.yaml
+  when:
+    - '"rke2_server" in group_names
