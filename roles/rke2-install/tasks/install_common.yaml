@@ -30,7 +30,6 @@
     owner: root
     group: root
     mode: "0770"
-    recurse: yes
     state: directory
   become: yes
 
