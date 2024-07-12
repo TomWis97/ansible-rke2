@@ -11,6 +11,7 @@
 - name: Kubectl | Create .kube directory
   ansible.builtin.file:
     path: /root/.kube
+    state: directory
     owner: root
     group: root
     mode: '0700'
