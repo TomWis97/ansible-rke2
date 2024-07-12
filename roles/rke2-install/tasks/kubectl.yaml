@@ -7,6 +7,9 @@
     owner: root
     group: root
     follow_redirects: all
+    status_codes:
+      - 200
+      - 304
   become: yes
 
 - name: Kubectl | Create .kube directory
