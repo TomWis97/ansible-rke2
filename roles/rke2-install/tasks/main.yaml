@@ -10,5 +10,10 @@
   when:
     - '"rke2_server" in group_names'
 
+- name: RKE2 Agent
+  ansible.builtin.include_tasks: install_agent.yaml
+  when:
+    - '"rke2_agent" in group_names'
+
 - name: Kubectl
   ansible.builtin.include_tasks: kubectl.yaml
