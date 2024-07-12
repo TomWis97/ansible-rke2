@@ -55,4 +55,5 @@
   ansible.builtin.yum:
     name: "{{ ((rke2_selinux_releases.json | selectattr('tag_name', 'in', latest_version) | first)['assets'] | selectattr('name', 'search', 'el' + (ansible_distribution_major_version|string) + '.noarch.rpm') | first)['browser_download_url'] }}"
     state: installed
+    disable_gpg_check: yes  # I know, I know....
   become: yes
