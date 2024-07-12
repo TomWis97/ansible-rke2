@@ -7,7 +7,7 @@
     owner: root
     group: root
     follow_redirects: all
-    status_codes:
+    status_code:
       - 200
       - 304
   become: yes
