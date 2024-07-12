@@ -10,7 +10,6 @@
     state: reloaded
   become: yes
 
-become: yes
 - name: Reboot if old NetworkManager
   ansible.builtin.reboot:
   when:
