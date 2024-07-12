@@ -1,0 +1,6 @@
+---
+- name: Install RKE2
+  hosts: rke2
+  roles:
+    - rke2-install
+
