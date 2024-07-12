@@ -6,6 +6,7 @@
     mode: '0755'
     owner: root
     group: root
+  become: yes
 
 - name: Kubectl | Create .kube directory
   ansible.builtin.file:
@@ -13,8 +14,10 @@
     owner: root
     group: root
     mode: '0700'
+  become: yes
 
 - name: Kubectl | Make sure root can find kubectl
   ansible.builtin.lineinfile:
     path: /root/.bashrc
     line: '[[ "$PATH" =~ "/usr/local/bin" ]] || export PATH="/usr/local/bin:$PATH" # Added by rke2 playbook'
+  become: yes
