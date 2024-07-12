@@ -57,3 +57,6 @@
     state: installed
     disable_gpg_check: yes  # I know, I know....
   become: yes
+
+- name: Common | Flush handlers
+  ansible.builtin.meta: flush_handlers
