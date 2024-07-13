@@ -1,0 +1,6 @@
+---
+- name: Instal ArgoCD
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('ansible.builtin.url', 'https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml') }}"
+  become: yes

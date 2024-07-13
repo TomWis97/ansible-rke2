@@ -4,3 +4,8 @@
   roles:
     - rke2-install
 
+- name: Install ArgoCD
+  hosts: rke2_server[0]
+  roles:
+    - argocd
+
