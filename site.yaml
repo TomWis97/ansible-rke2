@@ -3,9 +3,13 @@
   hosts: rke2
   roles:
     - rke2-install
+  tags:
+    - rke2
 
 - name: Install ArgoCD
   hosts: rke2_server[0]
   roles:
+    - argocd
+  tags:
     - argocd
 
