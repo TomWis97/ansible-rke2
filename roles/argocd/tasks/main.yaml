@@ -42,7 +42,7 @@
       spec:
         ingressClassName: nginx
         rules:
-        - host: argocd.apps.tomlab.awscloudqstars.nl
+        - host: "{{ argocd_hostname }}"
           http:
             paths:
             - path: /
