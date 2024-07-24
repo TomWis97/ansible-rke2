@@ -32,5 +32,5 @@
   when: not rke2_agent_status.changed
 
 - name: Reload sysctl
-  ansible.builtin.command: /usr/sbin/sysctl -p
+  ansible.builtin.command: /usr/sbin/sysctl -p /etc/sysctl.d/60-rke2-cis.conf
   become: yes
