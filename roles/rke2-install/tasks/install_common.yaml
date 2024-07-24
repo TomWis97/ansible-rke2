@@ -57,5 +57,32 @@
     disable_gpg_check: yes  # I know, I know....
   become: yes
 
+- name: Common | Place Sysctl parameters
+  ansible.builtin.copy:
+    src: /usr/local/share/rke2/rke2-cis-sysctl.conf
+    dest: /etc/sysctl.d/60-rke2-cis.conf
+    owner: root
+    group: root
+    mode: '0664'
+    remote_src: yes
+  become: yes
+  notify: Reload sysctl
+
+- name: Common | Create etcd group
+  ansible.builtin.group:
+    name: etcd
+    system: yes
+  become: yes
+
+- name: Common | Create etcd user
+  ansible.builtin.user:
+    name: etcd
+    system: yes
+    comment: etcd user
+    shell: /sbin/nologin
+    create_home: no
+    group: etcd
+  become: yes
+
 - name: Common | Flush handlers
   ansible.builtin.meta: flush_handlers

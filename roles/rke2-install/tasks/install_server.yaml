@@ -18,3 +18,13 @@
   async: 600
   become: yes
   register: rke2_server_status
+
+- name: RKE2 Server | Wait until service is active
+  ansible.builtin.systemd_service:
+    name: rke2-server.service
+    state: started
+  retries: 30
+  delay: 10
+  register: result
+  until: result.status.ActiveState == "active"
+  become: yes

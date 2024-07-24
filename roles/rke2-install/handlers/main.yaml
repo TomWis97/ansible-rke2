@@ -30,3 +30,7 @@
     state: restarted
   become: yes
   when: not rke2_agent_status.changed
+
+- name: Reload sysctl
+  ansible.builtin.command: /usr/sbin/sysctl -p
+  become: yes
