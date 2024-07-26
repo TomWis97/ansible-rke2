@@ -9,7 +9,7 @@ node_label: {{ rke2_node_labels | to_json }}
 {% endif %}
 cluster-cidr: {{ rke2_cluster_cidr }}
 service-cidr: {{ rke2_service_cidr }}
-cni: cilium
+cni: calico
 node-name: {{ inventory_hostname }}
 selinux: True
 profile: cis

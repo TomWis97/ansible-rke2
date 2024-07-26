@@ -31,8 +31,17 @@
     - Reboot if old NetworkManager
   become: yes
 
-- name: Pre-install | Install iptables
+- name: Pre-install | Install required packages
   ansible.builtin.yum:
-    name: iptables
+    name:
+      - iptables
+      - tar
     state: installed
   become: yes
+
+- name: Pre-install | Allow port for metrics
+  ansible.builtin.firewalld:
+    port: 10250/tcp
+    state: enabled
+    permanent: yes
+    immediate: yes
