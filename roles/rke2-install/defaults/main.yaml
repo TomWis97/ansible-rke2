@@ -2,3 +2,6 @@
 rke2_channel: stable
 rke2_cluster_cidr: "172.20.0.0/16"
 rke2_service_cidr: "172.21.0.0/16"
+# Format: list of dicts with keys:
+# access_mode (RWO, ROM, RWM), size, name, path, uid, gid)
+rke2_hostpath_volumes: []

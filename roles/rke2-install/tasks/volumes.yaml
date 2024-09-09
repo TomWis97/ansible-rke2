@@ -1,0 +1,56 @@
+---
+- name: Volumes | Create path
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    setype: container_file_t
+    owner: "{{ item.uid | default(0) }}"
+    group: "{{ item.gid | default(0) }}"
+  become: yes
+
+- name: Volumes | Create subdirectories
+  vars:
+    uid: "{{ item.uid | default(0) }}"
+    gid: "{{ item.gid | default(0) }}"
+    path: "{{ item.path }}"
+  ansible.builtin.file:
+    path: "{{ path }}/{{ subdir }}"
+    state: directory
+    setype: container_file_t
+    owner: "{{ uid }}"
+    group: "{{ gid }}"
+  become: yes
+  loop: "{{ item.subdirs | default([]) }}"
+  loop_control:
+    loop_var: subdir
+
+- name: Volumes | Create file context settings
+  community.general.sefcontext:
+    target: "{{ item.path }}(/.*)?"
+    setype: container_file_t
+    state: present
+  become: yes
+
+- name: Volumes | Create Persistent Volume object
+  vars:
+    accessmode_lookup:
+      RWO: ReadWriteOnce
+      ROM: ReadOnlyMany
+      RWM: ReadWriteMany
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: PersistentVolume
+      metadata:
+        name: "{{ item.name }}"
+        labels:
+          type: local
+      spec:
+        capacity:
+          storage: "{{ item.size }}"
+        accessModes:
+          - "{{ accessmode_lookup[item.access_mode | default('RWM')] }}"
+        hostPath:
+          path: "{{ item.path }}"
+  become: yes

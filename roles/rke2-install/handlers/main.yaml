@@ -34,3 +34,9 @@
 - name: Reload sysctl
   ansible.builtin.command: /usr/sbin/sysctl -p /etc/sysctl.d/60-rke2-cis.conf
   become: yes
+
+- name: Reload Firewalld
+  ansible.builtin.systemd_service:
+    name: firewalld.service
+    state: reloaded
+  become: yes

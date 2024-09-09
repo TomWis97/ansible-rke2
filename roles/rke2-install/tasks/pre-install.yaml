@@ -45,3 +45,36 @@
     state: enabled
     permanent: yes
     immediate: yes
+  become: yes
+
+- name: Pre-install | Create Firewalld zone for Calico
+  ansible.builtin.firewalld:
+    zone: kubeAccept
+    state: present
+    permanent: yes
+  become: yes
+  notify: Reload Firewalld
+
+- name: Pre-install | Configure firewalld zone target for Calico
+  ansible.builtin.firewalld:
+    zone: kubeAccept
+    permanent: yes
+    target: ACCEPT
+    state: present
+  become: yes
+  notify: Reload Firewalld
+
+- name: Pre-install | Configure firewalld zone interfaces for Calico
+  ansible.builtin.firewalld:
+    zone: kubeAccept
+    permanent: yes
+    interface: "{{ item }}"
+    state: enabled
+  loop:
+    - vxlan.calico
+    - cali+
+  become: yes
+  notify: Reload Firewalld
+
+- name: Pre-install | Flush handlers
+  ansible.builtin.meta: flush_handlers

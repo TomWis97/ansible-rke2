@@ -17,3 +17,19 @@
 
 - name: Kubectl
   ansible.builtin.include_tasks: kubectl.yaml
+
+- name: Helm
+  ansible.builtin.include_tasks: helm.yaml
+
+- name: CSI-driver-SMB
+  ansible.builtin.include_tasks: csi-driver-smb.yaml
+
+- name: Volumes
+  ansible.builtin.include_tasks:
+    file: volumes.yaml
+    apply:
+      tags:
+        - volumes
+  loop: "{{ rke2_hostpath_volumes }}"
+  tags:
+    - volumes

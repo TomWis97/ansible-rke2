@@ -1,0 +1,20 @@
+---
+- name: Helm | Fetch installation script
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    dest: /var/tmp/get-helm-3.sh
+    checksum: sha256:c909b416fe831e0bf21442e068cef0312cfc7313a39cc0ad0cf1a91fdf47860d
+    mode: '0700'
+    owner: root
+    group: root
+  become: yes
+
+- name: Helm | Check if Helm binary exists
+  ansible.builtin.stat:
+    path: /usr/local/bin/helm
+  register: helm_current_status
+
+- name: Helm | Install latest version of Helm through script
+  ansible.builtin.command: /var/tmp/get-helm-3.sh
+  when: (not helm_current_status.stat.exists) or ( rke_upgrade | default(False) )
+  become: yes

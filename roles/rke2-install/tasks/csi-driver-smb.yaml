@@ -1,0 +1,33 @@
+---
+- name: CSI-driver-SMB | Add Helm repo
+  environment:
+    PATH: "{{ ansible_env.PATH }}:/usr/local/bin"
+  kubernetes.core.helm_repository:
+    name: csi-driver-smb
+    repo_url: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-smb/master/charts
+  become: yes
+
+- name: CSI-driver-SMB | Get latest version
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/kubernetes-csi/csi-driver-smb/releases
+    return_content: yes
+  register: csi_smb_releases
+  when: rke2_install_csi_driver_smb_version is not defined
+
+- name: CSI-driver-SMB | Deploy CSI driver
+  environment:
+    PATH: "{{ ansible_env.PATH }}:/usr/local/bin"
+  kubernetes.core.helm:
+    name: csi-driver-smb
+    chart_ref: csi-driver-smb/csi-driver-smb
+    namespace: kube-system
+    chart_version: "{{ rke2_install_csi_driver_smb_version | default(csi_smb_releases.json[0]['tag_name']) }}"
+    update_repo_cache: yes
+  become: yes
+
+- name: CSI-driver-SMB | Enable virt_use_samba SEBoolean
+  ansible.posix.seboolean:
+    name: virt_use_samba
+    state: on
+    persistent: yes
+  become: yes

@@ -39,6 +39,7 @@
         annotations:
           nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
           nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+          nginx.ingress.kubernetes.io/backend-protocol: HTTPS
       spec:
         ingressClassName: nginx
         rules:
@@ -52,4 +53,55 @@
                   name: argocd-server
                   port:
                     name: https
+  become: yes
+
+- name: Create repository secret
+  kubernetes.core.k8s:
+    state: present
+    namespace: argocd
+    definition:
+      apiVersion: v1
+      kind: Secret
+      type: Opaque
+      metadata:
+        labels:
+          argocd.argoproj.io/secret-type: repository
+        name: repo-{{ item.name }}
+      data:
+        enableLfs: "{{ item.enable_lfs | b64encode }}"
+        project: "{{ item.project | b64encode }}"
+        sshPrivateKey: "{{ item.ssh_private_key | b64encode }}"
+        type: "{{ item.type | b64encode }}"
+        url: "{{ item.url | b64encode }}"
+  become: yes
+  loop: "{{ argocd_repos }}"
+
+- name: Create apps
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: argoproj.io/v1alpha1
+      kind: Application
+      metadata:
+        name: "{{ item.name }}"
+        namespace: "{{ item.app_namespace | default('argocd') }}"
+      spec:
+        destination:
+          namespace: "{{ item.destination_namespace }}"
+          server: https://kubernetes.default.svc
+        project: default
+        source:
+          directory:
+            jsonnet: {}
+            recurse: true
+          path: "{{ item.repo_path }}"
+          repoURL: "{{ item.repo_url }}"
+          targetRevision: "{{ item.repo_target_revision | default('main') }}"
+        syncPolicy:
+          automated:
+            prune: "{{ item.auto_prune | default(False) }}"
+            selfHeal: "{{ item.self_heal | default(False) }}"
+          syncOptions: "{{ item.sync_options | default([]) }}"
+      status: {}
+  loop: "{{ argocd_apps }}"
   become: yes
