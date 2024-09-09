@@ -1,3 +1,4 @@
 ---
 argocd_hostname: argocd.example.com
 argocd_repos: []
+argocd_apps: []
