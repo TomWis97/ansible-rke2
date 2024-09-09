@@ -39,42 +39,47 @@
     state: installed
   become: yes
 
-- name: Pre-install | Allow port for metrics
-  ansible.builtin.firewalld:
-    port: 10250/tcp
-    state: enabled
-    permanent: yes
-    immediate: yes
-  become: yes
+- name: Pre-install | Configure firewalld
+  when:
+    - "'firewalld.service' in ansible_facts.services"
+    - ansible_facts['services']['firewalld.service']['state'] == 'running'
+  block:
+  - name: Pre-install | Allow port for metrics
+    ansible.builtin.firewalld:
+      port: 10250/tcp
+      state: enabled
+      permanent: yes
+      immediate: yes
+    become: yes
 
-- name: Pre-install | Create Firewalld zone for Calico
-  ansible.builtin.firewalld:
-    zone: kubeAccept
-    state: present
-    permanent: yes
-  become: yes
-  notify: Reload Firewalld
+  - name: Pre-install | Create Firewalld zone for Calico
+    ansible.builtin.firewalld:
+      zone: kubeAccept
+      state: present
+      permanent: yes
+    become: yes
+    notify: Reload Firewalld
 
-- name: Pre-install | Configure firewalld zone target for Calico
-  ansible.builtin.firewalld:
-    zone: kubeAccept
-    permanent: yes
-    target: ACCEPT
-    state: present
-  become: yes
-  notify: Reload Firewalld
+  - name: Pre-install | Configure firewalld zone target for Calico
+    ansible.builtin.firewalld:
+      zone: kubeAccept
+      permanent: yes
+      target: ACCEPT
+      state: present
+    become: yes
+    notify: Reload Firewalld
 
-- name: Pre-install | Configure firewalld zone interfaces for Calico
-  ansible.builtin.firewalld:
-    zone: kubeAccept
-    permanent: yes
-    interface: "{{ item }}"
-    state: enabled
-  loop:
-    - vxlan.calico
-    - cali+
-  become: yes
-  notify: Reload Firewalld
+  - name: Pre-install | Configure firewalld zone interfaces for Calico
+    ansible.builtin.firewalld:
+      zone: kubeAccept
+      permanent: yes
+      interface: "{{ item }}"
+      state: enabled
+    loop:
+      - vxlan.calico
+      - cali+
+    become: yes
+    notify: Reload Firewalld
 
 - name: Pre-install | Flush handlers
   ansible.builtin.meta: flush_handlers
