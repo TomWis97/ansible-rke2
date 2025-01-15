@@ -28,3 +28,23 @@
   register: result
   until: result.status.ActiveState == "active"
   become: yes
+
+    #- name: RKE2 Server | Gather IPs of all rke2 machines
+    #  ansible.builtin.set_fact:
+    #    rke2_ips: "{{ rke2_ips | default([]) + [ hostvars[item]['ansible_default_ipv4']['address'] ] }}"
+    #  loop: "{{ groups['rke2'] }}"
+
+- name: RKE2 Server | Add Firewalld exceptions
+  vars:
+    rke2_ports:
+      - 6443/tcp
+      - 9345/tcp
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    #source: "{{ item[1] }}"
+    state: enabled
+    permanent: yes
+    immediate: yes
+      #loop: "{{ rke2_ports | product(rke2_ips) }}"
+  loop: "{{ rke2_ports }}"
+  become: yes

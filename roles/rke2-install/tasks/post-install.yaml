@@ -1,0 +1,14 @@
+---
+- name: Post-install | Label nodes
+  delegate_to: "{{ groups['rke2_server'][0] }}"
+  kubernetes.core.k8s:
+    state: patched
+    api_version: v1
+    kind: Node
+    name: "{{ inventory_hostname | lower }}"
+    definition:
+      metadata:
+        labels: "{{ rke2_additional_node_labels }}"
+  tags:
+    - post-install
+  become: yes

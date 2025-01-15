@@ -32,6 +32,8 @@
   become: yes
 
 - name: Volumes | Create Persistent Volume object
+  run_once: yes
+  delegate_to: "{{ groups['rke2_server'][0] }}"
   vars:
     accessmode_lookup:
       RWO: ReadWriteOnce

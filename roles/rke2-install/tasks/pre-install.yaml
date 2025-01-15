@@ -81,5 +81,19 @@
     become: yes
     notify: Reload Firewalld
 
+- name: Pre-install | Allow ports for Calico
+  ansible.builtin.firewalld:
+    permanent: yes
+    port: "{{ item }}"
+    state: enabled
+  become: yes
+  notify: Reload Firewalld
+  loop:
+    - 5473/tcp
+    - 172/tcp
+    - 4789/udp
+    - 9098/tcp
+    - 9099/tcp
+
 - name: Pre-install | Flush handlers
   ansible.builtin.meta: flush_handlers
