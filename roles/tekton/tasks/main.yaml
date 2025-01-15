@@ -1,0 +1,15 @@
+---
+- name: Create Tekton namespace
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: namespace
+    name: tekton
+    state: present
+  become: yes
+
+- name: Install Tekton
+  kubernetes.core.k8s:
+    namespace: tekton
+    src: https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
+    state: present
+  become: yes
