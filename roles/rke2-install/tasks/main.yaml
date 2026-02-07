@@ -40,3 +40,17 @@
   loop: "{{ rke2_hostpath_volumes }}"
   tags:
     - volumes
+
+- name: Kube-vip Daemonset
+  ansible.builtin.include_tasks: kube-vip-daemonset.yaml
+  tags:
+    - kube-vip
+    - kube-vip-daemonset
+  when: kubevip_enable_daemonset == True
+
+- name: Kube-vip Static
+  ansible.builtin.include_tasks: kube-vip-static.yaml
+  tags:
+    - kube-vip
+    - kube-vip-static
+  when: kubevip_enable_static == True

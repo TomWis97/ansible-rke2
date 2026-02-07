@@ -1,0 +1,57 @@
+---
+- name: Get latest Kube-VIP version
+  become: no
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/kube-vip/kube-vip/releases
+    return_content: true
+  register: kubevip_version_raw
+  when: kubevip_version is not defined
+
+- name: Generate Kube-VIP daemonset pod manifest
+  delegate_to: localhost
+  become: no
+  run_once: true
+  vars:
+    kubevip_version_used: "{{ kubevip_version | default(kubevip_version_raw.json[0]['name']) }}"
+    kubevip_interface: "{{ ansible_default_ipv4.interface }}"
+    kubeconfig_path: /etc/rancher/rke2/rke2.yaml
+  ansible.builtin.command: >-
+    podman
+    run
+    --rm
+    ghcr.io/kube-vip/kube-vip:{{ kubevip_version_used }}
+    manifest
+    daemonset
+    --interface {{ kubevip_interface }}
+    --inCluster
+    --services
+    --arp
+    --leaderElection
+  changed_when: false
+  register: kubevip_manifest
+
+- name: Create manifests directory
+  ansible.builtin.file:
+    path: /var/lib/rancher/rke2/server/manifests
+    state: directory
+
+- name: Write Kube-VIP RBAC manifests
+  ansible.builtin.get_url:
+    dest: /var/lib/rancher/rke2/server/manifests/kubevip-rbac.yaml
+    url: https://kube-vip.io/manifests/rbac.yaml
+    owner: root
+    group: root
+
+- name: Write Kube-VIP daemonset manifest
+  vars:
+    kubevip_version_used: "{{ kubevip_version | default(kubevip_version_raw.json[0]['name']) }}"
+    kubevip_interface: "{{ ansible_default_ipv4.interface }}"
+    kubeconfig_path: /etc/rancher/rke2/rke2.yaml
+  ansible.builtin.copy: 
+    dest: /var/lib/rancher/rke2/server/manifests/kubevip-daemonset.yaml
+    #content: "{{ kubevip_manifest.stdout | regex_replace('path: \\/etc\\/kubernetes\\/admin\\.conf', 'path: /etc/rancher/rke2/rke2.yaml') | from_yaml | combine(nodeselector_snippet, recursive=True) | to_yaml }}"
+    content: "{{ lookup('kube-vip-daemonset.yaml.j2') }}"
+    owner: root
+    group: root

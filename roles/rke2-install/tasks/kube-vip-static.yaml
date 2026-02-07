@@ -1,0 +1,45 @@
+---
+- name: Get latest Kube-VIP version
+  delegate_to: localhost
+  become: no
+  run_once: true
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/kube-vip/kube-vip/releases
+    return_content: true
+  register: kubevip_version_raw
+
+- name: Generate Kube-VIP static pod manifest
+  delegate_to: localhost
+  run_once: true
+  vars:
+    kubevip_address: 192.168.122.30
+    kubevip_version: "{{ kubevip_version_raw.json[0]['name'] }}"
+    kubevip_interface: "{{ ansible_default_ipv4.interface }}"
+    kubeconfig_path: /etc/rancher/rke2/rke2.yaml
+  ansible.builtin.command: >-
+    podman
+    run
+    --rm
+    ghcr.io/kube-vip/kube-vip:{{ kubevip_version }}
+    manifest
+    pod
+    --interface {{ kubevip_interface }}
+    --address {{ kubevip_api_address }}
+    --controlplane
+    --arp
+    --leaderElection
+  changed_when: false
+  register: kubevip_manifest
+  become: no
+
+- name: Create static manifests directory
+  ansible.builtin.file:
+    path: /var/lib/rancher/rke2/agent/pod-manifests
+    state: directory
+
+- name: Write Kube-VIP manifest
+  ansible.builtin.copy: 
+    dest: /var/lib/rancher/rke2/agent/pod-manifests/kubevip.yaml
+    content: "{{ kubevip_manifest.stdout | regex_replace('path: \\/etc\\/kubernetes\\/admin\\.conf', 'path: /etc/rancher/rke2/rke2.yaml') }}"
+    owner: root
+    group: root
