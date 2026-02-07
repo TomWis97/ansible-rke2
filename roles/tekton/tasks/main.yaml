@@ -7,9 +7,19 @@
     state: present
   become: yes
 
-- name: Install Tekton
+- name: Install Tekton Pipelines
   kubernetes.core.k8s:
     namespace: tekton
     src: https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
     state: present
   become: yes
+
+- name: Install Tekton Triggers
+  kubernetes.core.k8s:
+    namespace: tekton
+    src: "{{ item }}"
+    state: present
+  become: yes
+  loop:
+    - https://storage.googleapis.com/tekton-releases/triggers/latest/release.yaml
+    - https://storage.googleapis.com/tekton-releases/triggers/latest/interceptors.yaml

@@ -55,4 +55,5 @@
           - "{{ accessmode_lookup[item.access_mode | default('RWM')] }}"
         hostPath:
           path: "{{ item.path }}"
+        persistentVolumeReclaimPolicy: "{{ item.reclaim_policy | default(omit) }}"
   become: yes

@@ -28,6 +28,8 @@
 
 - name: CSI-driver-SMB
   ansible.builtin.include_tasks: csi-driver-smb.yaml
+  tags:
+    - csi-driver-smb
 
 - name: Volumes
   ansible.builtin.include_tasks:

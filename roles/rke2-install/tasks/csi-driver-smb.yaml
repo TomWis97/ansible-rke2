@@ -29,9 +29,26 @@
       update_repo_cache: yes
     become: yes
 
-  - name: CSI-driver-SMB | Enable virt_use_samba SEBoolean
-    ansible.posix.seboolean:
-      name: virt_use_samba
-      state: on
-      persistent: yes
-    become: yes
+- name: CSI-driver-SMB | Enable virt_use_samba SEBoolean
+  ansible.posix.seboolean:
+    name: virt_use_samba
+    state: on
+    persistent: yes
+  become: yes
+
+- name: CSI-driver-SMB | Create secrets
+  run_once: yes
+  delegate_to: "{{ groups['rke2_server'][0] }}"
+  kubernetes.core.k8s:
+    state: present
+    api_version: v1
+    kind: Secret
+    namespace: "{{ item.namespace }}"
+    name: "{{ item.name }}"
+    definition:
+      data:
+        domain: "{{ item.domain | b64encode }}"
+        username: "{{ item.user | b64encode }}"
+        password: "{{ item.password | b64encode }}"
+  loop: "{{ rke2_smb_credentials }}"
+  become: yes

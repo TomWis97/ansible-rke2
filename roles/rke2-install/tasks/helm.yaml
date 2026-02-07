@@ -7,7 +7,7 @@
     ansible.builtin.get_url:
       url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
       dest: /var/tmp/get-helm-3.sh
-      checksum: sha256:4a01413bf2a767ae744b8bbe4485cd83654d9a0a769c92377afc36328d5a007a.
+      checksum: sha256:38b65f882d9cae3891755bdb03becc6a01ae6f9cb24826c191f219ddfee70a5d
       mode: '0700'
       owner: root
       group: root
