@@ -46,11 +46,15 @@
   tags:
     - kube-vip
     - kube-vip-daemonset
-  when: kubevip_enable_daemonset == True
+  when:
+    - "'rke2_server' in groups"
+    - kubevip_enable_daemonset == True
 
 - name: Kube-vip Static
   ansible.builtin.include_tasks: kube-vip-static.yaml
   tags:
     - kube-vip
     - kube-vip-static
-  when: kubevip_enable_static == True
+  when:
+    - "'rke2_server' in groups"
+    - kubevip_enable_static == True

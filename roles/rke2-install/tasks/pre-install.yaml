@@ -36,7 +36,17 @@
     name:
       - iptables
       - tar
+      - python3-pip
     state: installed
+  become: yes
+
+- name: Pre-install | Install required PIP modules
+  ansible.builtin.pip:
+    name:
+      - kubernetes
+      - oauthlib
+      - requests-oauthlib
+    state: latest
   become: yes
 
 - name: Pre-install | Configure firewalld

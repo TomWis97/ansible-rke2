@@ -1,0 +1,25 @@
+---
+- name: Local Path Provisioner | Installation
+  delegate_to: "{{ groups['rke2_server'][0] }}"
+  run_once: yes
+  block:
+  - name: Local Path Provisioner | Get latest version
+    ansible.builtin.uri:
+      url: https://api.github.com/repos/rancher/local-path-provisioner/releases
+      return_content: yes
+    register: lpp_release
+
+  - name: Local Path Provisioner | Create local-path-storage namespace
+    kubernetes.core.k8s:
+      api_version: v1
+      kind: namespace
+      name: local-path-storage
+      state: present
+    become: yes
+
+  - name: Local Path Provisioner | Install Local Path Provisioner
+    kubernetes.core.k8s:
+      namespace: local-path-storage
+      src: https://raw.githubusercontent.com/rancher/local-path-provisioner/{{ lpp_release.json[0]['tag_name'] }}/deploy/local-path-storage.yaml
+      state: present
+    become: yes

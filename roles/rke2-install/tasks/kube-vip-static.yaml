@@ -9,13 +9,14 @@
   register: kubevip_version_raw
 
 - name: Generate Kube-VIP static pod manifest
+  become: no
   delegate_to: localhost
   run_once: true
   vars:
     kubevip_address: 192.168.122.30
     kubevip_version: "{{ kubevip_version_raw.json[0]['name'] }}"
     kubevip_interface: "{{ ansible_default_ipv4.interface }}"
-    kubeconfig_path: /etc/rancher/rke2/rke2.yaml
+    kubeconfig_path: /root/.kube/config
   ansible.builtin.command: >-
     podman
     run
@@ -33,13 +34,15 @@
   become: no
 
 - name: Create static manifests directory
+  become: yes
   ansible.builtin.file:
     path: /var/lib/rancher/rke2/agent/pod-manifests
     state: directory
 
 - name: Write Kube-VIP manifest
+  become: yes
   ansible.builtin.copy: 
     dest: /var/lib/rancher/rke2/agent/pod-manifests/kubevip.yaml
-    content: "{{ kubevip_manifest.stdout | regex_replace('path: \\/etc\\/kubernetes\\/admin\\.conf', 'path: /etc/rancher/rke2/rke2.yaml') }}"
+    content: "{{ kubevip_manifest.stdout | regex_replace('path: \\/etc\\/kubernetes\\/admin\\.conf', 'path: /root/.kube/config.yaml') }}"
     owner: root
     group: root

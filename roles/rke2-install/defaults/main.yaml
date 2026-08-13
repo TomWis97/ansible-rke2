@@ -6,3 +6,4 @@ rke2_service_cidr: "172.21.0.0/16"
 # access_mode (RWO, ROM, RWM), size, name, path, uid, gid)
 rke2_hostpath_volumes: []
 rke2_additional_node_labels: {}
+rke2_additional_secrets: []
