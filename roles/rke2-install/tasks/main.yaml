@@ -30,6 +30,7 @@
   ansible.builtin.include_tasks: csi-driver-smb.yaml
   tags:
     - csi-driver-smb
+  when: rke2_smb_credentials is defined
 
 - name: Volumes
   ansible.builtin.include_tasks:
