@@ -1,44 +1,40 @@
 ---
-- name: RKE2 Server | Place configation
-  ansible.builtin.template:
-    src: server-config.yaml.j2
-    dest: /etc/rancher/rke2/config.yaml
-    owner: root
-    group: root
-    mode: "0660"
-  become: yes
-  notify: Restart rke2-server
-
-- name: RKE2 Server | Enable and start Systemd service
-  ansible.builtin.systemd_service:
-    name: rke2-server.service
-    state: started
-    enabled: yes
-  poll: 5
-  async: 600
-  become: yes
-  register: rke2_server_status
-
-- name: RKE2 Server | Wait until service is active
-  ansible.builtin.systemd_service:
-    name: rke2-server.service
-    state: started
-  retries: 30
-  delay: 10
-  register: result
-  until: result.status.ActiveState == "active"
+- name: RKE2 Server | Check for existing cluster membership
+  ansible.builtin.stat:
+    path: /var/lib/rancher/rke2/server/node-token
+  register: rke2_server_node_token_stat
   become: yes
 
-    #- name: RKE2 Server | Gather IPs of all rke2 machines
-    #  ansible.builtin.set_fact:
-    #    rke2_ips: "{{ rke2_ips | default([]) + [ hostvars[item]['ansible_default_ipv4']['address'] ] }}"
-    #  loop: "{{ groups['rke2'] }}"
+- name: RKE2 Server | Determine servers already in the cluster
+  ansible.builtin.set_fact:
+    rke2_existing_members: "{{ rke2_existing_members | default([]) + [item] }}"
+  loop: "{{ groups['rke2_server'] }}"
+  when: hostvars[item].rke2_server_node_token_stat.stat.exists | default(false)
+
+- name: RKE2 Server | Determine bootstrap and join-source hosts
+  vars:
+    # Only ever consulted when no server has bootstrapped yet, so growing the inventory later
+    # can't retroactively change who the original bootstrap host was.
+    rke2_first_ever_bootstrap_host: "{{ groups['rke2_server'] | sort | first }}"
+  ansible.builtin.set_fact:
+    rke2_join_source: "{{ (rke2_existing_members | sort | first) if (rke2_existing_members | length > 0) else rke2_first_ever_bootstrap_host }}"
+    rke2_is_bootstrap_host: "{{ (rke2_existing_members | length == 0) and (inventory_hostname == rke2_first_ever_bootstrap_host) }}"
+
+- name: RKE2 Server | Determine whether this host still needs to join
+  ansible.builtin.set_fact:
+    # A host that has already joined never needs join directives again, regardless of which
+    # other host is currently the deterministic "chosen one" - keeps re-runs idempotent.
+    rke2_needs_join: "{{ not (rke2_server_node_token_stat.stat.exists | default(false)) and not rke2_is_bootstrap_host }}"
 
 - name: RKE2 Server | Add Firewalld exceptions
   vars:
     rke2_ports:
       - 6443/tcp
       - 9345/tcp
+      # etcd client/peer ports - required between server nodes before any join/bootstrap is
+      # attempted, otherwise "MemberAdd" hangs retrying forever against a blocked port.
+      - 2379/tcp
+      - 2380/tcp
   ansible.posix.firewalld:
     port: "{{ item }}"
     #source: "{{ item[1] }}"
@@ -48,3 +44,93 @@
       #loop: "{{ rke2_ports | product(rke2_ips) }}"
   loop: "{{ rke2_ports }}"
   become: yes
+
+- name: RKE2 Server | Bootstrap first cluster member
+  when: rke2_is_bootstrap_host
+  block:
+  - name: RKE2 Server | Place configation
+    ansible.builtin.template:
+      src: server-config.yaml.j2
+      dest: /etc/rancher/rke2/config.yaml
+      owner: root
+      group: root
+      mode: "0660"
+    become: yes
+    notify: Restart rke2-server
+
+  - name: RKE2 Server | Enable and start Systemd service
+    ansible.builtin.systemd_service:
+      name: rke2-server.service
+      state: started
+      enabled: yes
+    poll: 5
+    async: 600
+    become: yes
+    register: rke2_server_status
+
+  - name: RKE2 Server | Wait until service is active
+    ansible.builtin.systemd_service:
+      name: rke2-server.service
+      state: started
+    retries: 30
+    delay: 10
+    register: result
+    until: result.status.ActiveState == "active"
+    become: yes
+
+- name: RKE2 Server | Join or reconcile remaining cluster members
+  when: not rke2_is_bootstrap_host
+  block:
+  - name: RKE2 Server | Check for saved join token
+    ansible.builtin.stat:
+      path: /etc/rancher/rke2/server-token
+    register: rke2_server_token_file
+    become: yes
+
+  - name: RKE2 Server | Fetch join token
+    delegate_to: "{{ rke2_join_source }}"
+    ansible.builtin.slurp:
+      src: /var/lib/rancher/rke2/server/node-token
+    become: yes
+    when: rke2_needs_join and not rke2_server_token_file.stat.exists
+    register: rke2_server_join_token
+
+  - name: RKE2 Server | Save join token
+    ansible.builtin.copy:
+      content: "{{ rke2_server_join_token.content | b64decode }}"
+      owner: root
+      group: root
+      mode: "0600"
+      dest: /etc/rancher/rke2/server-token
+    become: yes
+    when: rke2_needs_join and not rke2_server_token_file.stat.exists
+
+  - name: RKE2 Server | Place configation
+    ansible.builtin.template:
+      src: server-config.yaml.j2
+      dest: /etc/rancher/rke2/config.yaml
+      owner: root
+      group: root
+      mode: "0660"
+    become: yes
+    notify: Restart rke2-server
+
+  - name: RKE2 Server | Enable and start Systemd service
+    ansible.builtin.systemd_service:
+      name: rke2-server.service
+      state: started
+      enabled: yes
+    poll: 5
+    async: 600
+    become: yes
+    register: rke2_server_status
+
+  - name: RKE2 Server | Wait until service is active
+    ansible.builtin.systemd_service:
+      name: rke2-server.service
+      state: started
+    retries: 30
+    delay: 10
+    register: result
+    until: result.status.ActiveState == "active"
+    become: yes
