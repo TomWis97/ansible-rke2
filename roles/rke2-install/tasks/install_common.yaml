@@ -15,7 +15,12 @@
 
 - name: Common | Register latest version
   ansible.builtin.set_fact:
-    rke2_version: "{{ latest_version_request['url'].split('/') | last }}"
+    # default('') keeps this safe to template even when this task is about to be skipped
+    # (rke2_version already pinned): on some ansible-core versions, a skipped task's
+    # registered result (no "url" key at all) still gets its args finalized/templated
+    # before the "when" skip is actually applied, so a bare .url lookup can crash a task
+    # that was never meant to run in the first place.
+    rke2_version: "{{ (latest_version_request['url'] | default('')).split('/') | last }}"
   when: rke2_version is not defined
 
 #- name: Common | Get checksums
