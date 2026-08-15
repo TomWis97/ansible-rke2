@@ -20,7 +20,7 @@
 
   - name: Helm | Install latest version of Helm through script
     environment:
-      PATH: "{{ ansible_env.PATH }}:/usr/local/bin"
+      PATH: "{{ ansible_facts.env.PATH }}:/usr/local/bin"
     ansible.builtin.command: /var/tmp/get-helm-3.sh
     when: (not helm_current_status.stat.exists) or ( rke_upgrade | default(False) )
     become: yes

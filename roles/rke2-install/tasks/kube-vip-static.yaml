@@ -13,7 +13,7 @@
   run_once: true
   vars:
     kubevip_version: "{{ kubevip_version_raw.json[0]['name'] }}"
-    kubevip_interface: "{{ ansible_default_ipv4.interface }}"
+    kubevip_interface: "{{ ansible_facts.default_ipv4.interface }}"
   ansible.builtin.command: >-
     podman
     run

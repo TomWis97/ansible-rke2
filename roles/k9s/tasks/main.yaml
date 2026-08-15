@@ -13,11 +13,11 @@
       armv7l: arm
       x86_64: amd64
   ansible.builtin.yum:
-    name: "{{ (k9s_releases.json[0].assets | selectattr('name', 'match', 'k9s_linux_' + arch_lookup[ansible_architecture] + '.rpm'))[0].browser_download_url }}"
+    name: "{{ (k9s_releases.json[0].assets | selectattr('name', 'match', 'k9s_linux_' + arch_lookup[ansible_facts.architecture] + '.rpm'))[0].browser_download_url }}"
     state: installed
     disable_gpg_check: yes
   become: yes
-  when: ansible_pkg_mgr == "yum"
+  when: ansible_facts.pkg_mgr == "yum"
 
 - name: Install k9s (Apt)
   vars:
@@ -26,7 +26,7 @@
       armv7l: arm
       x86_64: amd64
   ansible.builtin.apt:
-    deb: "{{ (k9s_releases.json[0].assets | selectattr('name', 'match', 'k9s_linux_' + arch_lookup[ansible_architecture] + '.deb'))[0].browser_download_url }}"
+    deb: "{{ (k9s_releases.json[0].assets | selectattr('name', 'match', 'k9s_linux_' + arch_lookup[ansible_facts.architecture] + '.deb'))[0].browser_download_url }}"
     state: present
   become: yes
-  when: ansible_pkg_mgr == "apt"
+  when: ansible_facts.pkg_mgr == "apt"

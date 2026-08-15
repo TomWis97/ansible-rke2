@@ -26,7 +26,7 @@
   become: yes
   vars:
     kubevip_version_used: "{{ kubevip_version | default(kubevip_version_raw.json[0]['name']) }}"
-    kubevip_interface: "{{ ansible_default_ipv4.interface }}"
+    kubevip_interface: "{{ ansible_facts.default_ipv4.interface }}"
     kubeconfig_path: /root/.kube/config
   ansible.builtin.copy: 
     dest: /var/lib/rancher/rke2/server/manifests/kubevip-daemonset.yaml

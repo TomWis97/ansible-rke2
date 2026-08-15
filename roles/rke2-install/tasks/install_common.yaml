@@ -5,7 +5,7 @@
       aarch64: arm64
       x86_64: amd64
   ansible.builtin.set_fact:
-    rke2_arch: "{{ arch_lookup[ansible_architecture] }}"
+    rke2_arch: "{{ arch_lookup[ansible_facts.architecture] }}"
 
 - name: Common | Get latest version
   ansible.builtin.uri:
@@ -39,7 +39,7 @@
     owner: root
     group: root
     remote_src: yes
-    src: https://github.com/rancher/rke2/releases/download/{{ rke2_version }}/rke2.{{ ansible_system | lower }}-{{ rke2_arch }}.tar.gz
+    src: https://github.com/rancher/rke2/releases/download/{{ rke2_version }}/rke2.{{ ansible_facts.system | lower }}-{{ rke2_arch }}.tar.gz
   notify: Reload Systemd
   become: yes
 
@@ -52,7 +52,7 @@
   vars:
       latest_version: "{{ rke2_selinux_releases.json | json_query('[*].tag_name') | select('search', 'stable') | community.general.version_sort | last }}"
   ansible.builtin.yum:
-    name: "{{ ((rke2_selinux_releases.json | selectattr('tag_name', 'in', latest_version) | first)['assets'] | selectattr('name', 'search', 'el' + (ansible_distribution_major_version|string) + '.noarch.rpm') | first)['browser_download_url'] }}"
+    name: "{{ ((rke2_selinux_releases.json | selectattr('tag_name', 'in', latest_version) | first)['assets'] | selectattr('name', 'search', 'el' + (ansible_facts.distribution_major_version|string) + '.noarch.rpm') | first)['browser_download_url'] }}"
     state: installed
     disable_gpg_check: yes  # I know, I know....
   become: yes

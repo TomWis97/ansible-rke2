@@ -5,7 +5,7 @@
   block:
   - name: CSI-driver-SMB | Add Helm repo
     environment:
-      PATH: "{{ ansible_env.PATH }}:/usr/local/bin"
+      PATH: "{{ ansible_facts.env.PATH }}:/usr/local/bin"
     kubernetes.core.helm_repository:
       name: csi-driver-smb
       repo_url: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-smb/master/charts
@@ -20,7 +20,7 @@
 
   - name: CSI-driver-SMB | Deploy CSI driver
     environment:
-      PATH: "{{ ansible_env.PATH }}:/usr/local/bin"
+      PATH: "{{ ansible_facts.env.PATH }}:/usr/local/bin"
     kubernetes.core.helm:
       name: csi-driver-smb
       chart_ref: csi-driver-smb/csi-driver-smb
