@@ -8,6 +8,7 @@
       url: https://api.github.com/repos/rancher/local-path-provisioner/releases
       return_content: yes
     register: lpp_release
+    check_mode: false
 
   - name: Local Path Provisioner | Create local-path-storage namespace
     kubernetes.core.k8s:

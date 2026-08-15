@@ -7,6 +7,7 @@
     url: https://api.github.com/repos/kube-vip/kube-vip/releases
     return_content: true
   register: kubevip_version_raw
+  check_mode: false
 
 - name: Generate Kube-VIP static pod manifest
   delegate_to: localhost
@@ -29,6 +30,11 @@
   changed_when: false
   register: kubevip_manifest
   become: no
+  # This only runs podman locally (delegate_to: localhost) to render manifest text - it never
+  # touches the actual managed node, so it's safe to always run for real under --check too.
+  # The "Write Kube-VIP manifest" task below needs kubevip_manifest.stdout regardless of check
+  # mode, and command doesn't support check mode on its own.
+  check_mode: false
 
 - name: Create static manifests directory
   become: yes
