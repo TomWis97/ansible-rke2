@@ -9,8 +9,6 @@
     definition:
       metadata:
         labels: "{{ rke2_additional_node_labels }}"
-  tags:
-    - post-install
   become: yes
 
 - name: Post-install | Provision additional secrets
@@ -25,6 +23,4 @@
       data: "{{ item.data | default(omit) }}"
       stringData: "{{ item.stringData | default(omit) }}"
   loop: "{{ rke2_additional_secrets }}"
-  tags:
-    - post-install
   become: yes
