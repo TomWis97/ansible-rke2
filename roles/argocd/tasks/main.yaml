@@ -53,7 +53,7 @@
         template:
           metadata:
             annotations:
-              kubectl.kubernetes.io/restartedAt: "{{ ansible_date_time.iso8601 }}"
+              kubectl.kubernetes.io/restartedAt: "{{ ansible_facts.date_time.iso8601 }}"
   when: argocd_insecure_configmap is changed
   become: yes
 
