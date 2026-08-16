@@ -1,0 +1,30 @@
+---
+- name: Traefik | Create manifests directory
+  become: yes
+  ansible.builtin.file:
+    path: /var/lib/rancher/rke2/server/manifests
+    state: directory
+
+- name: Traefik | Write HelmChartConfig
+  # Without defaultTLSResourcesNamespace set, Traefik's "default" TLSStore/TLSOption (the
+  # cluster-wide fallback cert and TLS policy) can be defined in ANY namespace and wins
+  # regardless of where it's created - anyone able to create a CRD in any one namespace could
+  # hijack the TLS policy, mTLS included, for every route that doesn't pin its own cert.
+  # Traefik's own docs call this out and recommend restricting it explicitly.
+  become: yes
+  ansible.builtin.copy:
+    dest: /var/lib/rancher/rke2/server/manifests/rke2-traefik-config.yaml
+    content: |
+      ---
+      apiVersion: helm.cattle.io/v1
+      kind: HelmChartConfig
+      metadata:
+        name: rke2-traefik
+        namespace: kube-system
+      spec:
+        valuesContent: |-
+          providers:
+            kubernetesCRD:
+              defaultTLSResourcesNamespace: {{ rke2_traefik_default_tls_resources_namespace }}
+    owner: root
+    group: root

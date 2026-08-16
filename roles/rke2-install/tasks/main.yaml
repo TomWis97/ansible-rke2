@@ -50,6 +50,18 @@
   tags:
     - volumes
 
+- name: Traefik Configuration
+  ansible.builtin.include_tasks:
+    file: traefik-config.yaml
+    apply:
+      tags:
+        - traefik
+  tags:
+    - traefik
+  when:
+    - "'rke2_server' in groups"
+    - rke2_traefik_default_tls_resources_namespace is defined
+
 - name: Kube-vip Daemonset
   ansible.builtin.include_tasks:
     file: kube-vip-daemonset.yaml

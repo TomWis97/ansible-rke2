@@ -7,3 +7,6 @@ rke2_service_cidr: "172.21.0.0/16"
 rke2_hostpath_volumes: []
 rke2_additional_node_labels: {}
 rke2_additional_secrets: []
+# Undefined by default (opt-in): when set, restricts Traefik's cluster-wide default
+# TLSStore/TLSOption to only be honored from this one namespace - see traefik-config.yaml.
+# rke2_traefik_default_tls_resources_namespace: reverse-proxy
