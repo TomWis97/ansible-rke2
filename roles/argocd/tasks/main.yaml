@@ -68,6 +68,7 @@
         name: argocd-server
         namespace: argocd
       spec:
+        ingressClassName: traefik
         entryPoints:
           - websecure
         routes:
