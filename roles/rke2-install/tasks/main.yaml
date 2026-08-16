@@ -60,7 +60,7 @@
     - traefik
   when:
     - "'rke2_server' in groups"
-    - rke2_traefik_default_tls_resources_namespace is defined
+    - rke2_traefik_default_tls_resources_namespace is defined or kubevip_traefik_address is defined
 
 - name: Kube-vip Daemonset
   ansible.builtin.include_tasks:

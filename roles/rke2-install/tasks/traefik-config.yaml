@@ -6,11 +6,6 @@
     state: directory
 
 - name: Traefik | Write HelmChartConfig
-  # Without defaultTLSResourcesNamespace set, Traefik's "default" TLSStore/TLSOption (the
-  # cluster-wide fallback cert and TLS policy) can be defined in ANY namespace and wins
-  # regardless of where it's created - anyone able to create a CRD in any one namespace could
-  # hijack the TLS policy, mTLS included, for every route that doesn't pin its own cert.
-  # Traefik's own docs call this out and recommend restricting it explicitly.
   become: yes
   ansible.builtin.copy:
     dest: /var/lib/rancher/rke2/server/manifests/rke2-traefik-config.yaml
@@ -23,8 +18,17 @@
         namespace: kube-system
       spec:
         valuesContent: |-
+      {% if rke2_traefik_default_tls_resources_namespace is defined %}
           providers:
             kubernetesCRD:
               defaultTLSResourcesNamespace: {{ rke2_traefik_default_tls_resources_namespace }}
+      {% endif %}
+      {% if kubevip_traefik_address is defined %}
+          # Gives kube-vip-ds a Service to attach the ingress VIP to - see kube-vip-daemonset.yaml.
+          service:
+            spec:
+              type: LoadBalancer
+              loadBalancerIP: {{ kubevip_traefik_address }}
+      {% endif %}
     owner: root
     group: root
