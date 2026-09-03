@@ -20,6 +20,7 @@
     namespace: "{{ item.namespace }}"
     name: "{{ item.name }}"
     definition:
+      type: "{{ item.type | default(omit) }}"
       data: "{{ item.data | default(omit) }}"
       stringData: "{{ item.stringData | default(omit) }}"
   loop: "{{ rke2_additional_secrets }}"
