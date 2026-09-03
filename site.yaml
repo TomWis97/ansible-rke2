@@ -1,6 +1,14 @@
 ---
 - name: Install RKE2
   hosts: rke2
+  # Gathering Facts is an implicit task that inherits the play's own tags, so a narrower
+  # --tags selection would otherwise skip it entirely and break any task depending on ansible_facts.
+  # Tagging it "always" here makes it run regardless of which tags are requested.
+  gather_facts: false
+  pre_tasks:
+    - name: Gather facts
+      ansible.builtin.setup:
+      tags: always
   roles:
     - rke2-install
   tags:

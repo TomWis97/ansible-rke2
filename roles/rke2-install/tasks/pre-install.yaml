@@ -36,7 +36,29 @@
     name:
       - iptables
       - tar
+      - python3-pip
+      - python3-firewall
+      # EL10 images ship without the xt_* netfilter match/target modules (incl. nft_compat),
+      # which live in this package rather than the base kernel. Without it, iptables-nft rules
+      # used by kube-proxy, Calico's Felix, and CNI hostPort (portmap) all fail at runtime.
+      - kernel-modules-extra
     state: installed
+  become: yes
+
+- name: Pre-install | Load br_netfilter kernel module
+  community.general.modprobe:
+    name: br_netfilter
+    state: present
+    persistent: present
+  become: yes
+
+- name: Pre-install | Install required PIP modules
+  ansible.builtin.pip:
+    name:
+      - kubernetes
+      - oauthlib
+      - requests-oauthlib
+    state: latest
   become: yes
 
 - name: Pre-install | Configure firewalld

@@ -9,6 +9,19 @@
     definition:
       metadata:
         labels: "{{ rke2_additional_node_labels }}"
-  tags:
-    - post-install
+  become: yes
+
+- name: Post-install | Provision additional secrets
+  delegate_to: "{{ groups['rke2_server'][0] }}"
+  kubernetes.core.k8s:
+    state: present
+    api_version: v1
+    kind: Secret
+    namespace: "{{ item.namespace }}"
+    name: "{{ item.name }}"
+    definition:
+      type: "{{ item.type | default(omit) }}"
+      data: "{{ item.data | default(omit) }}"
+      stringData: "{{ item.stringData | default(omit) }}"
+  loop: "{{ rke2_additional_secrets }}"
   become: yes

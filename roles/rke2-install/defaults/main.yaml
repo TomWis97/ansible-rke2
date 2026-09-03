@@ -6,3 +6,11 @@ rke2_service_cidr: "172.21.0.0/16"
 # access_mode (RWO, ROM, RWM), size, name, path, uid, gid)
 rke2_hostpath_volumes: []
 rke2_additional_node_labels: {}
+rke2_additional_secrets: []
+# Undefined by default (opt-in): when set, restricts Traefik's cluster-wide default
+# TLSStore/TLSOption to only be honored from this one namespace - see traefik-config.yaml.
+# rke2_traefik_default_tls_resources_namespace: reverse-proxy
+# Undefined by default (opt-in): when set, makes the Traefik Service type: LoadBalancer with
+# this as its loadBalancerIP, so kube-vip-ds can pick it up and advertise it - see
+# traefik-config.yaml. Only meaningful alongside kubevip_enable_daemonset: yes.
+# kubevip_traefik_address: 192.168.122.29

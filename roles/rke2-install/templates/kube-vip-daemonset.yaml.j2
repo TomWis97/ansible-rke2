@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels: 
+    app.kubernetes.io/name: kube-vip-ds
+    app.kubernetes.io/version: "{{ kubevip_version_used }}"
+  name: kube-vip-ds
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels: {app.kubernetes.io/name: kube-vip-ds}
+  template:
+    metadata:
+      labels: 
+        app.kubernetes.io/name: kube-vip-ds
+        app.kubernetes.io/version: "{{ kubevip_version_used }}"
+    spec:
+      containers:
+      - args: [manager]
+        env:
+        - {name: vip_arp, value: 'true'}
+        - name: vip_nodename
+          valueFrom:
+            fieldRef: {fieldPath: spec.nodeName}
+        - {name: vip_interface, value: {{ kubevip_interface }}}
+        - {name: dns_mode, value: first}
+        - {name: dhcp_mode, value: ipv4}
+        - {name: svc_enable, value: 'true'}
+        - {name: svc_leasename, value: plndr-svcs-lock}
+        - {name: vip_leaderelection, value: 'true'}
+        - {name: vip_leaseduration, value: '5'}
+        - {name: vip_renewdeadline, value: '3'}
+        - {name: vip_retryperiod, value: '1'}
+        # The static kube-vip pod (control-plane API VIP) also runs hostNetwork on these same
+        # nodes and defaults to :2112 for its own metrics server - give this one a different
+        # port so neither loses the bind race.
+        - {name: prometheus_server, value: ':2113'}
+        image: ghcr.io/kube-vip/kube-vip:{{ kubevip_version_used }}
+        imagePullPolicy: IfNotPresent
+        name: kube-vip
+        resources: {}
+        securityContext:
+          capabilities:
+            add: [NET_ADMIN, NET_RAW]
+            drop: [ALL]
+      hostNetwork: true
+      nodeSelector: {workload/reverse-proxy: 'true'}
+      serviceAccountName: kube-vip
+  updateStrategy: {}

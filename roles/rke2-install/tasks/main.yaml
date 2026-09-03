@@ -16,7 +16,11 @@
     - '"rke2_agent" in group_names'
 
 - name: Post-installation tasks
-  ansible.builtin.include_tasks: post-install.yaml
+  ansible.builtin.include_tasks:
+    file: post-install.yaml
+    apply:
+      tags:
+        - post-install
   tags:
     - post-install
 
@@ -27,9 +31,14 @@
   ansible.builtin.include_tasks: helm.yaml
 
 - name: CSI-driver-SMB
-  ansible.builtin.include_tasks: csi-driver-smb.yaml
+  ansible.builtin.include_tasks:
+    file: csi-driver-smb.yaml
+    apply:
+      tags:
+        - csi-driver-smb
   tags:
     - csi-driver-smb
+  when: rke2_smb_credentials is defined
 
 - name: Volumes
   ansible.builtin.include_tasks:
@@ -40,3 +49,43 @@
   loop: "{{ rke2_hostpath_volumes }}"
   tags:
     - volumes
+
+- name: Traefik Configuration
+  ansible.builtin.include_tasks:
+    file: traefik-config.yaml
+    apply:
+      tags:
+        - traefik
+  tags:
+    - traefik
+  when:
+    - "'rke2_server' in groups"
+    - rke2_traefik_default_tls_resources_namespace is defined or kubevip_traefik_address is defined
+
+- name: Kube-vip Daemonset
+  ansible.builtin.include_tasks:
+    file: kube-vip-daemonset.yaml
+    apply:
+      tags:
+        - kube-vip
+        - kube-vip-daemonset
+  tags:
+    - kube-vip
+    - kube-vip-daemonset
+  when:
+    - "'rke2_server' in groups"
+    - kubevip_enable_daemonset == True
+
+- name: Kube-vip Static
+  ansible.builtin.include_tasks:
+    file: kube-vip-static.yaml
+    apply:
+      tags:
+        - kube-vip
+        - kube-vip-static
+  tags:
+    - kube-vip
+    - kube-vip-static
+  when:
+    - "'rke2_server' in groups"
+    - kubevip_enable_static == True

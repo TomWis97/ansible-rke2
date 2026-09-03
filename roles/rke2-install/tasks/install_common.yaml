@@ -5,18 +5,29 @@
       aarch64: arm64
       x86_64: amd64
   ansible.builtin.set_fact:
-    rke2_arch: "{{ arch_lookup[ansible_architecture] }}"
+    rke2_arch: "{{ arch_lookup[ansible_facts.architecture] }}"
 
 - name: Common | Get latest version
   ansible.builtin.uri:
     url: https://update.rke2.io/v1-release/channels/{{ rke2_channel }}
   register: latest_version_request
   when: rke2_version is not defined
+  check_mode: false
 
 - name: Common | Register latest version
   ansible.builtin.set_fact:
     rke2_version: "{{ latest_version_request['url'].split('/') | last }}"
   when: rke2_version is not defined
+
+- name: Common | Verify a version was resolved
+  ansible.builtin.assert:
+    that:
+      - rke2_version is defined
+      - rke2_version | length > 0
+    fail_msg: >-
+      rke2_version is unset or empty - either the RKE2 release channel lookup failed/
+      returned an unexpected response, or rke2_version was pinned to an empty value.
+    success_msg: "rke2_version resolved to {{ rke2_version | default('(unset)') }}"
 
 #- name: Common | Get checksums
 #  ansible.builtin.uri:
@@ -39,7 +50,7 @@
     owner: root
     group: root
     remote_src: yes
-    src: https://github.com/rancher/rke2/releases/download/{{ rke2_version }}/rke2.{{ ansible_system | lower }}-{{ rke2_arch }}.tar.gz
+    src: https://github.com/rancher/rke2/releases/download/{{ rke2_version }}/rke2.{{ ansible_facts.system | lower }}-{{ rke2_arch }}.tar.gz
   notify: Reload Systemd
   become: yes
 
@@ -47,12 +58,13 @@
   ansible.builtin.uri:
     url: https://api.github.com/repos/rancher/rke2-selinux/releases
   register: rke2_selinux_releases
+  check_mode: false
 
 - name: Common | Install SELinux supporting package
   vars:
       latest_version: "{{ rke2_selinux_releases.json | json_query('[*].tag_name') | select('search', 'stable') | community.general.version_sort | last }}"
   ansible.builtin.yum:
-    name: "{{ ((rke2_selinux_releases.json | selectattr('tag_name', 'in', latest_version) | first)['assets'] | selectattr('name', 'search', 'el' + (ansible_distribution_major_version|string) + '.noarch.rpm') | first)['browser_download_url'] }}"
+    name: "{{ ((rke2_selinux_releases.json | selectattr('tag_name', 'in', latest_version) | first)['assets'] | selectattr('name', 'search', 'el' + (ansible_facts.distribution_major_version|string) + '.noarch.rpm') | first)['browser_download_url'] }}"
     state: installed
     disable_gpg_check: yes  # I know, I know....
   become: yes

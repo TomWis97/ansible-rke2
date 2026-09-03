@@ -1,0 +1,34 @@
+---
+- name: Traefik | Create manifests directory
+  become: yes
+  ansible.builtin.file:
+    path: /var/lib/rancher/rke2/server/manifests
+    state: directory
+
+- name: Traefik | Write HelmChartConfig
+  become: yes
+  ansible.builtin.copy:
+    dest: /var/lib/rancher/rke2/server/manifests/rke2-traefik-config.yaml
+    content: |
+      ---
+      apiVersion: helm.cattle.io/v1
+      kind: HelmChartConfig
+      metadata:
+        name: rke2-traefik
+        namespace: kube-system
+      spec:
+        valuesContent: |-
+      {% if rke2_traefik_default_tls_resources_namespace is defined %}
+          providers:
+            kubernetesCRD:
+              defaultTLSResourcesNamespace: {{ rke2_traefik_default_tls_resources_namespace }}
+      {% endif %}
+      {% if kubevip_traefik_address is defined %}
+          # Gives kube-vip-ds a Service to attach the ingress VIP to - see kube-vip-daemonset.yaml.
+          service:
+            spec:
+              type: LoadBalancer
+              loadBalancerIP: {{ kubevip_traefik_address }}
+      {% endif %}
+    owner: root
+    group: root

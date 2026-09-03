@@ -4,6 +4,12 @@ write-kubeconfig: /root/.kube/config
 tls-san:
   - {{ inventory_hostname }}
   - {{ ansible_host }}
+{% if kubevip_api_address is defined %}
+  - {{ kubevip_api_address }}
+{% if kubevip_api_hostname is defined %}
+  - {{ kubevip_api_hostname }}
+{% endif %}
+{% endif %}
 {% if rke2_node_labels is defined %}
 node_label: {{ rke2_node_labels | to_json }}
 {% endif %}
@@ -13,3 +19,8 @@ cni: calico
 node-name: {{ inventory_hostname }}
 selinux: True
 profile: cis
+ingress-controller: traefik
+{% if rke2_needs_join %}
+server: https://{{ hostvars[rke2_join_source]['ansible_facts']['default_ipv4']['address'] }}:9345
+token-file: /etc/rancher/rke2/server-token
+{% endif %}

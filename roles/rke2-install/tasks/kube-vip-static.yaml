@@ -1,0 +1,89 @@
+---
+- name: Get latest Kube-VIP version
+  delegate_to: localhost
+  become: no
+  run_once: true
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/kube-vip/kube-vip/releases
+    return_content: true
+  register: kubevip_version_raw
+  check_mode: false
+
+- name: Generate Kube-VIP static pod manifest
+  delegate_to: localhost
+  run_once: true
+  vars:
+    kubevip_version: "{{ kubevip_version_raw.json[0]['name'] }}"
+    kubevip_interface: "{{ hostvars[inventory_hostname]['ansible_facts']['default_ipv4']['interface'] }}"
+  ansible.builtin.command: >-
+    podman
+    run
+    --rm
+    ghcr.io/kube-vip/kube-vip:{{ kubevip_version }}
+    manifest
+    pod
+    --interface {{ kubevip_interface }}
+    --address {{ kubevip_api_address }}
+    --controlplane
+    --arp
+    --leaderElection
+  changed_when: false
+  register: kubevip_manifest
+  become: no
+  # This only runs podman locally (delegate_to: localhost) to render manifest text - it never
+  # touches the actual managed node, so it's safe to always run for real under --check too.
+  # The "Write Kube-VIP manifest" task below needs kubevip_manifest.stdout regardless of check
+  # mode, and command doesn't support check mode on its own.
+  check_mode: false
+
+- name: Create static manifests directory
+  become: yes
+  ansible.builtin.file:
+    path: /var/lib/rancher/rke2/agent/pod-manifests
+    state: directory
+
+- name: Kube-VIP | Register SELinux context for kubeconfig
+  # RKE2 writes /root/.kube/config with the admin_home_t type, which the kube-vip container
+  # (running under a container SELinux domain) can't stat - kube-vip's own FileExists() helper
+  # only handles ENOENT, so any other stat error (incl. an SELinux denial) panics with a nil
+  # pointer dereference instead of a clean error. This registers the policy so it (and anything
+  # restorecon touches) resolves to container_file_t from now on.
+  community.general.sefcontext:
+    target: /root/.kube/config
+    setype: container_file_t
+    state: present
+  become: yes
+
+- name: Kube-VIP | Apply SELinux context to kubeconfig
+  # RKE2 rewrites this file's content in place on every rke2-server (re)start rather than
+  # recreating it, so the label (an xattr on the inode) survives restarts and reboots on its
+  # own - verified by comparing inode numbers across a restart. This still needs to run on
+  # every playbook run, though: it's the only thing that applies the policy above to the file
+  # the very first time, and it's what re-fixes things if the file is ever genuinely recreated
+  # (e.g. a full node reset).
+  ansible.builtin.command: restorecon -v /root/.kube/config
+  become: yes
+  register: kubevip_kubeconfig_restorecon
+  changed_when: kubevip_kubeconfig_restorecon.stdout != ""
+
+- name: Write Kube-VIP manifest
+  become: yes
+  vars:
+    # Static pods aren't API objects, so kubelet never mounts a real ServiceAccount token into
+    # them. kube-vip needs an actual kubeconfig instead - point it at the root admin kubeconfig
+    # RKE2 already writes on every server node (server-config.yaml.j2: write-kubeconfig), mounted
+    # in at kube-vip's own default --k8sConfigPath. KUBECONFIG is set explicitly too so client-go
+    # picks it up via its normal lookup order rather than falling through to (broken) in-cluster
+    # auth if kube-vip's own flag resolution doesn't kick in first.
+    kubevip_pod: "{{ kubevip_manifest.stdout | from_yaml }}"
+    kubevip_container: "{{ kubevip_pod.spec.containers[0] | combine({'env': kubevip_pod.spec.containers[0].env + [{'name': 'KUBECONFIG', 'value': '/etc/kubernetes/admin.conf'}]}) }}"
+    kubevip_volumes:
+      - name: kubeconfig
+        hostPath:
+          path: /root/.kube/config
+    kubevip_spec: "{{ kubevip_pod.spec | combine({'containers': [kubevip_container], 'volumes': kubevip_volumes}) }}"
+  ansible.builtin.copy:
+    dest: /var/lib/rancher/rke2/agent/pod-manifests/kubevip.yaml
+    content: "{{ kubevip_pod | combine({'spec': kubevip_spec}) | to_nice_yaml }}"
+    owner: root
+    group: root
